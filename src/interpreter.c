@@ -2,26 +2,58 @@
 #include "interpreter.h"
 #include "screen.h"
 
-//fetch instruction and increment the program counter
-Instruction fetch_instruction(Memory *memory){
-  char* address=memory->RAM+memory->PC;
+//Get the unsigned short at the address
+unsigned short fetch_ushort(Memory* memory,int offset){
+  char* address=memory->RAM+offset;
   //Using the fact that chip 8 is big endian
   unsigned char first_byte=(*address);
   unsigned char second_byte=*(address+1);
   unsigned short value=0x100*(first_byte)+second_byte;
+  return value;
+}
+
+//Set the unsigned short at the address
+void set_ushort(Memory* memory,int offset,unsigned short value){
+  char* address=memory->RAM+offset;
+  char high_byte=(value)&(0xFF>>8);
+  char low_byte=(value)&(0xFF);
+  *address=high_byte;
+  *(address+1)=low_byte;
+}
+
+//fetch instruction and increment the program counter
+Instruction fetch_instruction(Memory *memory){
+  unsigned short value=fetch_ushort(memory,memory->PC);
   memory->PC+=2;
   Instruction instruction;
   initialise_instruction(&instruction,value);
   return instruction;
 }
 
+
+
 void decode_instruction(Instruction instr, Window* window, Memory* memory){
   //CLS
   if(instr.instruction==0x00E0){
     resetPixel(window);
   }
+
+  //Return from a subroutine
+  if(instr.instruction==0x00EE){
+    //Fetch the value at the PC
+    unsigned short address=fetch_ushort(memory, memory->SP);
+    memory->PC=address;
+    memory->SP+=2;
+  }
   //Jump
   else if(instr.instruction_type==1){
+    memory->PC=instr.address;
+  }
+
+  //Call a function
+  else if(instr.instruction_type==2){
+    memory->SP-=2;
+    set_ushort(memory,memory->SP,memory->PC);
     memory->PC=instr.address;
   }
 

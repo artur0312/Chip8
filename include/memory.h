@@ -39,6 +39,9 @@ typedef struct Instruction{
 
   //The 3 last nibbles, used to reference a memory address
   unsigned short address;
+
+  //The last nibble, used by some operations
+  unsigned short last_nibble;
   
 }Instruction;
 

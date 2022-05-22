@@ -45,6 +45,7 @@ void decode_instruction(Instruction instr, Window* window, Memory* memory){
     memory->PC=address;
     memory->SP+=2;
   }
+
   //Jump
   else if(instr.instruction_type==1){
     memory->PC=instr.address;
@@ -57,6 +58,31 @@ void decode_instruction(Instruction instr, Window* window, Memory* memory){
     memory->PC=instr.address;
   }
 
+  //Jump if register equals to number
+  else if(instr.instruction_type==3){
+    int register1=instr.register_1;
+    if(memory->registers[register1]==instr.number){
+      memory->PC+=2;
+    }
+  }
+
+  //Jump if register different from
+  else if(instr.instruction_type==4){
+    int register1=instr.register_1;
+    if(memory->registers[register1]!=instr.number){
+      memory->PC+=2;
+    }
+  }
+
+  //Jump if the value in both registers are equal
+  else if(instr.instruction_type==5 && instr.last_nibble==0){
+    int register1=instr.register_1;
+    int register2=instr.register_2;
+    if(memory->registers[register1]==memory->registers[register2]){
+      memory->PC+=2;
+    }
+  }
+
   //Set register
   else if(instr.instruction_type==6){
     memory->registers[instr.register_1]=instr.number;
@@ -67,6 +93,14 @@ void decode_instruction(Instruction instr, Window* window, Memory* memory){
     memory->registers[instr.register_1]+=instr.number;
   }
 
+  //Jump if the value in both registers are equal
+  else if(instr.instruction_type==9 && instr.last_nibble==0){
+    int register1=instr.register_1;
+    int register2=instr.register_2;
+    if(memory->registers[register1]!=memory->registers[register2]){
+      memory->PC+=2;
+    }
+  }
   //Set register I
   else if(instr.instruction_type==0xA){
     memory->I=instr.address;

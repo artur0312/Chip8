@@ -37,6 +37,7 @@ void initialise_instruction(Instruction* instruction,
                             unsigned short value){
   instruction->instruction=value;
   instruction->instruction_type=get_nibbles(value,1,1);
+  instruction->last_nibble=get_nibbles(value,4,4);
   instruction->register_1=get_nibbles(value,2,2);
   instruction->register_2=get_nibbles(value,3,3);
 

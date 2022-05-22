@@ -12,11 +12,15 @@ enable_testing()
 
 set(Headers
     include/screen.h
+    include/memory.h
+    include/interpreter.h
 )
 
 set(Sources
     src/chip8.c
     src/screen.c
+    src/memory.c
+    src/interpreter.c
 )
 
 find_package(SDL2 REQUIRED)

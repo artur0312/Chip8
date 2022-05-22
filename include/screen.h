@@ -30,5 +30,6 @@ void closeWindow(Window window);
 
 //Draw pixels
 void drawPixel(Window window);
+void resetPixel(Window* window);
 void updatePixel(int line, int column, Window* window, int value);
 #endif

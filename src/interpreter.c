@@ -88,9 +88,91 @@ void decode_instruction(Instruction instr, Window* window, Memory* memory){
     memory->registers[instr.register_1]=instr.number;
   }
 
-  //Add to register
+  //Add to register without carry flag
   else if(instr.instruction_type==7){
     memory->registers[instr.register_1]+=instr.number;
+  }
+
+  //Logic and arithmetic
+  else if(instr.instruction_type==8){
+    //Set the value of VX to the value of VY
+    if(instr.last_nibble==0){
+      memory->registers[instr.register_1]=memory->registers[instr.register_2]
+    }
+    //Binary OR
+    else if(instr.last_nibble==1){
+      unsigned char register1=memory->registers[instr.register_1];
+      unsigned char register2=memory->registers[instr.register_2];
+      unsigned char value=register1 | register2;
+      memory->registers[instr.register_1]=value;
+    }
+    //Binary AND
+    else if(instr.last_nibble==2){
+      unsigned char register1=memory->registers[instr.register_1];
+      unsigned char register2=memory->registers[instr.register_2];
+      unsigned char value=register1 & register2;
+      memory->registers[instr.register_1]=value;
+    }
+    //Binary XOR
+    else if(instr.last_nibble==3){
+      unsigned char register1=memory->registers[instr.register_1];
+      unsigned char register2=memory->registers[instr.register_2];
+      unsigned char value=register1 ^ register2;
+      memory->registers[instr.register_1]=value;
+    }
+
+    //Sum registers with the carry flag
+    else if(instr.last_nibble==4){
+      unsigned char register1=memory->registers[instr.register_1];
+      unsigned char register2=memory->registers[instr.register_2];
+      short result=register1+register2;
+      memory->registers[instr.register_1]=result%256;
+      memory->registers[15]= (result<256)? 0 : 1;
+    }
+
+    //Subtract VX-VY
+    else if(instr.last_nibble==5){
+      unsigned char register1=memory->registers[instr.register_1];
+      unsigned char register2=memory->registers[instr.register_2];
+      short result=register1-register2;
+      memory->registers[instr.register_1]=result;
+      memory->registers[15]= (register1>register2) ? 0 : 1;
+    }
+
+    //Subtract VX-VY
+    else if(instr.last_nibble==5){
+      unsigned char register1=memory->registers[instr.register_1];
+      unsigned char register2=memory->registers[instr.register_2];
+      short result=register1-register2;
+      memory->registers[instr.register_1]=result;
+      memory->registers[15]= (register1>register2) ? 0 : 1;
+    }
+
+  }
+
+  //Right shift operation to the original COSMAC VIP
+  else if(instr.last_nibble==6){
+      unsigned char register2=memory->registers[instr.register_2];
+      unsigned char result=register2>>1;
+      memory->registers[instr.register_1]=result;
+      memory->registers[15]= register2&1; 
+  }
+
+  //Subtract VX-VY
+    else if(instr.last_nibble==7){
+      unsigned char register1=memory->registers[instr.register_1];
+      unsigned char register2=memory->registers[instr.register_2];
+      short result=register2-register1;
+      memory->registers[instr.register_1]=result;
+      memory->registers[15]= (register1<register2) ? 0 : 1;
+    }
+
+  //Right shift operation to the original COSMAC VIP
+  else if(instr.last_nibble==0xE){
+      unsigned char register2=memory->registers[instr.register_2];
+      unsigned char result=register2<<1;
+      memory->registers[instr.register_1]=result;
+      memory->registers[15]= register2&8; 
   }
 
   //Jump if the value in both registers are equal
@@ -108,6 +190,8 @@ void decode_instruction(Instruction instr, Window* window, Memory* memory){
 
   //Draw sprite
   else if(instr.instruction_type==0xD){
+    //Set VF to 0
+    memory->registers[15]=0;
     int x_coordinate=memory->registers[instr.register_1]%64;
     int y_coordinate=memory->registers[instr.register_2]%32;
     int n=get_nibbles(instr.instruction,4,4);

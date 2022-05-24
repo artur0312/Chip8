@@ -18,7 +18,7 @@ typedef struct Memory{
 
   //Registers VA through VF
   //The index 0 is ignored
-  unsigned char registers[17];
+  unsigned char registers[16];
 }Memory;
 
 typedef struct Instruction{

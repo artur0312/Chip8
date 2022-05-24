@@ -97,7 +97,7 @@ void decode_instruction(Instruction instr, Window* window, Memory* memory){
   else if(instr.instruction_type==8){
     //Set the value of VX to the value of VY
     if(instr.last_nibble==0){
-      memory->registers[instr.register_1]=memory->registers[instr.register_2]
+      memory->registers[instr.register_1]=memory->registers[instr.register_2];
     }
     //Binary OR
     else if(instr.last_nibble==1){
@@ -186,6 +186,18 @@ void decode_instruction(Instruction instr, Window* window, Memory* memory){
   //Set register I
   else if(instr.instruction_type==0xA){
     memory->I=instr.address;
+  }
+
+  //Jump with offset aaccording to the COSMAC VIP
+  else if(instr.instruction_type==0xB){
+    memory->PC=memory->registers[0]+instr.number;
+  }
+
+  //Random
+  else if(instr.instruction_type==0xC){
+    unsigned char result=rand()%256;
+    unsigned char mask=get_nibbles(instr.instruction,3,4);
+    memory->registers[instr.register_1]=result&mask;
   }
 
   //Draw sprite

@@ -152,27 +152,27 @@ void decode_instruction(Instruction instr, Window* window, Memory* memory){
 
   //Right shift operation to the original COSMAC VIP
   else if(instr.last_nibble==6){
-      unsigned char register2=memory->registers[instr.register_2];
-      unsigned char result=register2>>1;
-      memory->registers[instr.register_1]=result;
-      memory->registers[15]= register2&1; 
+    unsigned char register2=memory->registers[instr.register_2];
+    unsigned char result=register2>>1;
+    memory->registers[instr.register_1]=result;
+    memory->registers[15]= register2&1; 
   }
 
   //Subtract VX-VY
-    else if(instr.last_nibble==7){
-      unsigned char register1=memory->registers[instr.register_1];
-      unsigned char register2=memory->registers[instr.register_2];
-      short result=register2-register1;
-      memory->registers[instr.register_1]=result;
-      memory->registers[15]= (register1<register2) ? 0 : 1;
-    }
+  else if(instr.last_nibble==7){
+    unsigned char register1=memory->registers[instr.register_1];
+    unsigned char register2=memory->registers[instr.register_2];
+    short result=register2-register1;
+    memory->registers[instr.register_1]=result;
+    memory->registers[15]= (register1<register2) ? 0 : 1;
+  }
 
   //Right shift operation to the original COSMAC VIP
   else if(instr.last_nibble==0xE){
-      unsigned char register2=memory->registers[instr.register_2];
-      unsigned char result=register2<<1;
-      memory->registers[instr.register_1]=result;
-      memory->registers[15]= register2&8; 
+    unsigned char register2=memory->registers[instr.register_2];
+    unsigned char result=register2<<1;
+    memory->registers[instr.register_1]=result;
+    memory->registers[15]= register2&8; 
   }
 
   //Jump if the value in both registers are equal
@@ -234,6 +234,101 @@ void decode_instruction(Instruction instr, Window* window, Memory* memory){
       y_coordinate++;
       if(y_coordinate==32){
         break;
+      }
+    }
+  }
+
+  //Skip if key is pressed
+  else if(instr.instruction_type==0xE){
+    unsigned char last_bytes=get_nibbles(instr.instruction,3,4);
+    //Skip if the key is pressed
+    if(last_bytes==0x9E){
+      int key=instr.register_1;
+      if(memory->keys_pressed[key]==true){
+        memory->PC+=2;
+      }
+    }
+
+    //Skip if the key is not pressed
+    else if(last_bytes==0x9E){
+      int key=instr.register_1;
+      if(memory->keys_pressed[key]==false){
+        memory->PC+=2;
+      }
+    }
+  }
+
+  //Misc instructions
+  else if(instr.instruction_type==0xF){
+    unsigned char last_bytes=get_nibbles(instr.instruction,3,4);
+    //Set VX to the value of the delay timer
+    if(last_bytes==0x07){
+      memory->registers[instr.register_1]=memory->DT;
+    }
+
+    //Wait for key
+    else if(last_bytes==0x0A){
+      bool repeat=true;
+      //See if one key is being pressed
+      for(int i=0;i<16;i++){
+        if(memory->keys_pressed[i]==true){
+          repeat=false;
+          memory->registers[instr.register_1]=i;
+          break;
+        }
+      }
+      if(repeat){
+        memory->PC-=2;
+      }
+    }
+
+    //Set the delay timer to the value in VX
+    else if(last_bytes==0x15){
+      memory->DT=memory->registers[instr.register_1];
+    }
+
+    //Set the sound timer to the value in VX
+    else if(last_bytes==0x18){
+      memory->ST=memory->registers[instr.register_1];
+    }
+
+    //Add the value in VX to the I register
+    else if(last_bytes==0x1E){
+      unsigned int result=memory->I+memory->registers[instr.register_1];
+      if(result>0xFFF){
+        memory->registers[15]=1;
+      }
+      memory->I=result%0xFFFF;
+    }
+
+    //Point to font
+    else if(last_bytes==0x29){
+      unsigned char font=instr.register_1;
+      memory->I=0x50+5*font;
+    }
+
+    //Binary to decimal
+    else if(last_bytes==0x33){
+      int x=memory->registers[instr.register_1];
+      int local=memory->I;
+      memory->RAM[local]=x/100;
+      memory->RAM[local+1]=(x/10)%10;
+      memory->RAM[local+2]=x%10;
+    }
+
+    //Store without changing I
+    else if(last_bytes==0x55){
+      int register_range=instr.register_1;
+      for(int i=0;i<=register_range;i++){
+        memory->RAM[memory->I+i]=memory->registers[i];
+      }
+    }
+
+    //Load without changin I
+    else if(last_bytes==0x65){
+      int register_range=instr.register_1;
+      for(int i=0;i<=register_range;i++){
+        memory->registers[i]=memory->RAM[memory->I+i];
       }
     }
   }
